@@ -1,0 +1,28 @@
+{
+  "name": "low_code_server",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Supernxd/low_code_server.git"
+  },
+  "author": "nxd",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Supernxd/low_code_server/issues"
+  },
+  "homepage": "https://github.com/Supernxd/low_code_server#readme",
+  "dependencies": {
+    "koa": "^2.13.4",
+    "koa-body": "^4.2.0",
+    "koa-mount": "^4.0.0",
+    "koa-static": "^5.0.0"
+  }
+}
