@@ -1,7 +1,198 @@
 <!DOCTYPE html>
 <head>
+  <script src="https://unpkg.com/@antv/x6/dist/x6.js"></script>
+  <style>
+    .container {
+      font-family: sans-serif;
+      padding: 0;
+      display: flex;
+      padding: 16px 8px;
+    }
 
+    .stencil {
+      width: 300px;
+      border: 1px solid #f0f0f0;
+      position: relative;
+    }
+
+    .content {
+      flex: 1;
+      height: 520px;
+      margin-left: 8px;
+      margin-right: 8px;
+      box-shadow: 0 0 10px 1px #e9e9e9;
+    }
+
+    .x6-graph-scroller {
+      border: 1px solid #f0f0f0;
+      margin-left: -1px;
+    }
+  </style>
 </head>
 <body>
-  <div>12312313</div>
+  <div id="container" class="container">
+    <div class="stencil" id="stencil" ></div>
+    <div class="content" id="content" ></div>
+  </div>
+  <button onclick="start()">开始</button>
+  <script>
+
+    const graph = new X6.Graph({
+      container: document.getElementById('content'),
+      grid: true,
+      snapline: {
+        enabled: true,
+        sharp: true,
+      },
+      scroller: {
+        enabled: true,
+        pageVisible: false,
+        pageBreak: false,
+        pannable: true,
+      },
+    })
+
+    const stencil = new X6.Addon.Stencil({
+      title: 'Components',
+      target: graph,
+      search(cell, keyword) {
+        return cell.shape.indexOf(keyword) !== -1
+      },
+      placeholder: 'Search by shape name',
+      notFoundText: 'Not Found',
+      collapsable: true,
+      stencilGraphWidth: 200,
+      stencilGraphHeight: 180,
+      groups: [
+        {
+          name: 'group1',
+          title: 'Group(Collapsable)',
+        },
+        {
+          name: 'group2',
+          title: 'Group(Collapsable)',
+        },
+      ],
+    })
+
+    this.document.getElementById('stencil').appendChild(stencil.container)
+
+    const { Rect, Circle } = X6.Shape
+
+    // graph.on('edge:mousedown', ({ e, edge, view }) => {
+
+    //   console.log('down',  e, edge, view )
+    // })
+
+    graph.on('edge:mouseup', ({ edge, options }) => {
+      // 没有指向下个节点 认为失败
+      if(!edge.target.cell) {
+        edge.remove()
+      }
+
+      // 指向自己失败
+      if(edge.target.cell == edge.source.cell) {
+        edge.remove()
+      }
+
+      // 指向输出点的失败
+      if(edge.source.port.indexOf('in-') > -1)
+        edge.remove()
+
+      if(!edge.target.port || edge.target.port.indexOf('out-') > -1)
+        edge.remove()
+
+      ws.send(JSON.stringify({code: 'addNextNode', data: { curId: edge.source.cell, nextId: edge.target.cell}}))
+    })
+
+    graph.on('node:added', ({ node, index, options }) => {
+      ws.send(JSON.stringify({code: 'addFlowNode', data: { name: node.label, id: node.id}}))
+    })
+
+    var id = ''
+    graph.on('node:click', ({ e, x, y, node, view }) => {
+      id = node.id
+      console.log('当前选中id')
+    })
+    
+    function start() {
+      ws.send(JSON.stringify({code: 'startFlow', data: { id, num: 3 }}))
+    }
+
+    function makeItem(name) {
+      return new Rect({
+        width: 80,
+        height: 60,
+        ports: {
+          items: [
+            {
+              id: 'in-port1',
+              group: 'in',
+            },
+            {
+              id: 'out-port4',
+              group: 'out',
+            },
+          ],
+          groups: {
+            in: {
+              position: 'left',
+              attrs: {
+                circle: {
+                  r: 6,
+                  magnet: true,
+                  stroke: '#31d0c6',
+                  strokeWidth: 2,
+                  fill: '#fff',
+                },
+              },
+            },
+            out: {
+              position: 'right',
+              attrs: {
+                circle: {
+                  r: 6,
+                  magnet: true,
+                  stroke: '#123456',
+                  strokeWidth: 2,
+                  fill: '#fff',
+                },
+              },
+            },
+          },
+        },
+        label: name,      
+      })
+    }
+
+    function setList (data) {
+      let componentGroup = []
+      for(let [key, value] of Object.entries(data)) {
+        componentGroup.push(makeItem(key))
+      }
+      stencil.load(componentGroup, 'group1')
+    }
+    
+  </script>
+
+  <script>
+
+    var ws = new WebSocket("ws://127.0.0.1:11111");
+
+    ws.onopen = function(evt) { 
+      console.log("Connection open ..."); 
+      // ws.send("Hello WebSockets!");
+    };
+
+    ws.onmessage = function(evt) {
+      console.log( "Received Message: " + evt.data);
+      const { code, data} = JSON.parse(evt.data)
+      setList(data)
+      // ws.close();
+    };
+
+    ws.onclose = function(evt) {
+      console.log("Connection closed.");
+    }
+  </script>
 </body>
