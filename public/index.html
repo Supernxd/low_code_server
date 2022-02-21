@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <head>
   <script src="https://unpkg.com/@antv/x6/dist/x6.js"></script>
   <style>
@@ -27,16 +28,28 @@
       border: 1px solid #f0f0f0;
       margin-left: -1px;
     }
+
+    .drawer {
+      height: 100%;
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 9999;
+      background-color: white;
+      border: solid 1px;
+    }
   </style>
 </head>
+
 <body>
   <div id="container" class="container">
-    <div class="stencil" id="stencil" ></div>
-    <div class="content" id="content" ></div>
+    <div class="stencil" id="stencil"></div>
+    <div class="content" id="content"></div>
   </div>
+  <div id="drawer" class="drawer"></div>
   <button onclick="start()">开始</button>
+  <button onclick="openDrawer()">打开</button>
   <script>
-
     const graph = new X6.Graph({
       container: document.getElementById('content'),
       grid: true,
@@ -63,8 +76,7 @@
       collapsable: true,
       stencilGraphWidth: 200,
       stencilGraphHeight: 180,
-      groups: [
-        {
+      groups: [{
           name: 'group1',
           title: 'Group(Collapsable)',
         },
@@ -77,63 +89,130 @@
 
     this.document.getElementById('stencil').appendChild(stencil.container)
 
-    const { Rect, Circle } = X6.Shape
+    const {
+      Rect,
+      Circle
+    } = X6.Shape
 
     // graph.on('edge:mousedown', ({ e, edge, view }) => {
 
     //   console.log('down',  e, edge, view )
     // })
 
-    graph.on('edge:mouseup', ({ edge, options }) => {
+    graph.on('edge:mouseup', ({
+      edge,
+      options
+    }) => {
       // 没有指向下个节点 认为失败
-      if(!edge.target.cell) {
+      if (!edge.target.cell) {
         edge.remove()
       }
 
       // 指向自己失败
-      if(edge.target.cell == edge.source.cell) {
+      if (edge.target.cell == edge.source.cell) {
         edge.remove()
       }
 
       // 指向输出点的失败
-      if(edge.source.port.indexOf('in-') > -1)
+      if (edge.source.port.indexOf('in-') > -1)
         edge.remove()
 
-      if(!edge.target.port || edge.target.port.indexOf('out-') > -1)
+      if (!edge.target.port || edge.target.port.indexOf('out-') > -1)
         edge.remove()
 
-      ws.send(JSON.stringify({code: 'addNextNode', data: { curId: edge.source.cell, nextId: edge.target.cell}}))
+      ws.send(JSON.stringify({
+        code: 'addNextNode',
+        data: {
+          curId: edge.source.cell,
+          nextId: edge.target.cell
+        }
+      }))
     })
 
-    graph.on('node:added', ({ node, index, options }) => {
-      ws.send(JSON.stringify({code: 'addFlowNode', data: { name: node.label, id: node.id}}))
+    graph.on('node:added', ({
+      node,
+      index,
+      options
+    }) => {
+      ws.send(JSON.stringify({
+        code: 'addFlowNode',
+        data: {
+          name: node.label,
+          id: node.id
+        }
+      }))
     })
 
     var id = ''
-    graph.on('node:click', ({ e, x, y, node, view }) => {
+    graph.on('node:click', ({
+      e,
+      x,
+      y,
+      node,
+      view
+    }) => {
       id = node.id
       console.log('当前选中id')
     })
-    
+
     function start() {
-      ws.send(JSON.stringify({code: 'startFlow', data: { id, num: 3 }}))
+      ws.send(JSON.stringify({
+        code: 'startFlow',
+        data: {
+          id,
+          num: 3
+        }
+      }))
     }
 
-    function makeItem(name) {
+
+  // const FlowChartImageRect1 = X6.Graph.registerNode('flow-chart-image-rect1', {
+  //   inherit: 'rect',
+  //   width:60,
+  //   height: 60,
+  //   attrs: {
+  //     image: {
+  //     //远程图片
+  //       'href': 'https://www.baidu.com/img/flexible/logo/pc/result.png',
+  //       width: 66,
+  //       height: 66,
+  //       x: 12,
+  //       y: 12,
+  //     },
+  //     title: {
+  //       text: '服务器',
+  //       refX: 25,
+  //       refY: 83,
+  //       fill: 'rgba(0,0,0,0.85)',
+  //       fontSize: 12,
+  //       'text-anchor': 'start',
+  //     },
+  //   },
+  // })
+
+
+    function makeItem(name, options) {
+      let count = options.inCount || 0,
+        index = 1,
+        items = [];
+
+      while(count >= index) {
+        items.push({id: `in-${index}`, group: 'in'});
+        index++;
+      }
+
+      count = options.outCount || 0
+      index = 1
+      while(count >= index) {
+        items.push({id: `out-${index}`, group: 'out'});
+        index++;
+      }
+
       return new Rect({
-        width: 80,
-        height: 60,
+        width: 60,
+        height: 30,
         ports: {
-          items: [
-            {
-              id: 'in-port1',
-              group: 'in',
-            },
-            {
-              id: 'out-port4',
-              group: 'out',
-            },
-          ],
+          items,
           groups: {
             in: {
               position: 'left',
@@ -161,38 +240,46 @@
             },
           },
         },
-        label: name,      
+        label: name,
       })
     }
 
-    function setList (data) {
+    function setList(data) {
+      // const c5=graph.createNode({shape:'flow-chart-image-rect1'})
       let componentGroup = []
-      for(let [key, value] of Object.entries(data)) {
-        componentGroup.push(makeItem(key))
+      for (let [key, value] of Object.entries(data)) {
+        console.log(key, value)
+        componentGroup.push(makeItem(key, value))
       }
       stencil.load(componentGroup, 'group1')
     }
-    
   </script>
 
   <script>
-
     var ws = new WebSocket("ws://127.0.0.1:11111");
 
-    ws.onopen = function(evt) { 
-      console.log("Connection open ..."); 
+    ws.onopen = function (evt) {
+      console.log("Connection open ...");
       // ws.send("Hello WebSockets!");
     };
 
-    ws.onmessage = function(evt) {
-      console.log( "Received Message: " + evt.data);
-      const { code, data} = JSON.parse(evt.data)
+    ws.onmessage = function (evt) {
+      console.log("Received Message: " + evt.data);
+      const {
+        code,
+        data
+      } = JSON.parse(evt.data)
       setList(data)
       // ws.close();
     };
 
-    ws.onclose = function(evt) {
+    ws.onclose = function (evt) {
       console.log("Connection closed.");
+    }
+  </script>
+  <script>
+    function openDrawer() {
+      document.getElementById('drawer').style.width = '400px' 
     }
   </script>
 </body>

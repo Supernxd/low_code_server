@@ -1,10 +1,38 @@
 
-function double (n) {
-  return n * 2
+function double() {
+  this.init = function() {
+    this.num = 2
+  }
+
+  this.setConfig = function(num) {
+    this.num = num
+  }
+
+  this.run = function(n) {
+    return n*this.num
+  }
+
+  this.end = function() {
+
+  }
 }
 
-function pow (n) {
-  return n ** 3
+function pow() {
+  this.init = function() {
+    this.num = 2
+  }
+
+  this.setConfig = function(num) {
+    this.num = num
+  }
+
+  this.run = function(n) {
+    return n**this.num
+  }
+
+  this.end = function() {
+    
+  }
 }
 
 
