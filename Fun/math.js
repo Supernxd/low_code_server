@@ -4,7 +4,7 @@ function double() {
     this.num = 2
   }
 
-  this.setConfig = function(num) {
+  this.update = function(num) {
     this.num = num
   }
 
@@ -22,7 +22,7 @@ function pow() {
     this.num = 2
   }
 
-  this.setConfig = function(num) {
+  this.update = function(num) {
     this.num = num
   }
 
