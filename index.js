@@ -46,8 +46,16 @@ wss.on('connection', function connection(ws) {
         break
       }
       case 'startFlow': {
-        // TODO 临时结局方案
         LCS.startFlow(index, data.id, data.num)
+        break
+      }
+      case 'getOptions': {
+        const values = LCS.getOptions(index, data.id)
+        ws.send(JSON.stringify({code: 'getOptions', data: {id: data.id, name: data.name, values}}));
+        break
+      }
+      case 'setMsg': {
+        LCS.setMsg(index, data.id, data.payload)
         break
       }
     }

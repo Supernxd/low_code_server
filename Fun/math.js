@@ -1,37 +1,56 @@
-
-function double() {
-  this.init = function() {
-    this.num = 2
+class double {
+  static options = {
+    num: { name: '乘法系数' }
   }
 
-  this.update = function(num) {
-    this.num = num
+  constructor() {
+    this.payload = {
+      num: 2
+    }
   }
 
-  this.run = function(n) {
-    return n*this.num
+  update({ num }) {
+    this.payload.num = +num
   }
 
-  this.end = function() {
+  run(n) {
+    return n*this.payload.num
+  }
 
+  end() {
+
+  }
+
+  getOptions() {
+    return this.payload
   }
 }
 
-function pow() {
-  this.init = function() {
-    this.num = 2
+class pow {
+  static options = {
+    num: { name: '指数系数' }
   }
 
-  this.update = function(num) {
-    this.num = num
+  constructor() {
+    this.payload = {
+      num: 2
+    }
   }
 
-  this.run = function(n) {
-    return n**this.num
+  update({ num }) {
+    this.payload.num = +num
   }
 
-  this.end = function() {
-    
+  run(n) {
+    return n**this.payload.num
+  }
+
+  end() {
+
+  }
+
+  getOptions() {
+    return this.payload
   }
 }
 

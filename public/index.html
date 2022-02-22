@@ -44,9 +44,109 @@
       width: 20%;
       height: 60%;
       position: absolute;
-      left: -10%;
+      left: -20%;
       background-color: #acacac;
       cursor: pointer;
+    }
+
+    #lcs-drawer {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 99;
+    }
+
+    #lcs-drawer .lcs-drawerMask {
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, .6);
+      position: relative;
+    }
+
+    #lcs-drawer .lcs-drawerMain {
+      width: 400px;
+      height: 100%;
+      background-color: #f0f0f0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      overflow: hidden;
+    }
+
+    #lcs-drawer .lcs-drawerMain .lcs-drawerMain-header {
+      width: 100%;
+      height: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 30px;
+      padding: 8px 0 8px 8px;
+      border-bottom: 2px solid #e9e9e9;
+    }
+
+    #lcs-drawer .lcs-drawerMain .lcs-drawerMain-footer {
+      width: 100%;
+      height: 40px;
+      position: absolute;
+      bottom: 0;
+      line-height: 30px;
+      border-top: 2px solid #e9e9e9;
+      padding: 8px 0;
+      text-align: right;
+    }
+
+    #lcs-drawer .lcs-drawerMain .lcs-drawerMain-footer button {
+      width: 80px;
+      height: 30px;
+      border: none;
+      border-radius: 6px;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    #lcs-drawer .lcs-drawerMain .lcs-drawerMain-footer button:nth-child(1) {
+      background-color: #f0f0f0;
+      color: #000000;
+      border: 1px solid #bfbfbf;
+    }
+
+    #lcs-drawer .lcs-drawerMain .lcs-drawerMain-footer button:nth-child(2) {
+      background-color: #5151c3;
+      border: 1px solid #5151c3;
+      color: #f0f0f0;
+    }
+
+    .lcs-form {
+      width: 350px;
+    }
+
+    .lcs-form input {
+      width: 220px;
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background-color: #fff;
+    }
+
+    .lcs-form input::placeholder {
+      color: #ccc;
+      font-size: 16px;
+    }
+
+    .lcs-form input:focus-within {
+      outline: 2px solid #5151c388
+    }
+
+    .lcs-form .lcs-form-input-box {
+      padding: 8px;
+    }
+
+    .lcs-form .lcs-form-input-box * {
+      margin: auto 4px;
+      justify-content: center;
     }
   </style>
 </head>
@@ -56,9 +156,19 @@
     <div class="stencil" id="stencil"></div>
     <div class="content" id="content"></div>
   </div>
-  <div id="drawer" class="drawer"></div>
-  <button onclick="start()">开始</button>
-  <button onclick="openDrawer()">打开</button>
+  <div id="lcs-drawer" class="lcs-drawer">
+    <div class='lcs-drawerMask' onclick='toggle()'></div>
+      <div class='lcs-drawerMain'>
+        <form id="lcs-body" class='lcs-form'>
+        </form>
+        <div class='lcs-drawerMain-footer'>
+          <button type='button' onclick='toggle()' >close</button>
+          <button type='button'onclick='submit()' >submit</button>
+        </div>
+
+      </div>
+  </div>
+  <button onclick="toggle()">打开</button>
   <script>
     const graph = new X6.Graph({
       container: document.getElementById('content'),
@@ -73,31 +183,6 @@
         pageBreak: false,
         pannable: true,
       },
-    })
-
-
-    const wrap = document.createElement('div')
-    wrap.style.width = '100%'
-    wrap.style.height = '100%'
-    wrap.style.background = '#f0f0f0'
-    wrap.style.display = 'flex'
-    wrap.style.justifyContent = 'center'
-    wrap.style.alignItems = 'center'
-    wrap.innerText = 'World'
-    const wrapBtn = document.createElement('div')
-    wrapBtn.classList.add('btn')
-    wrapBtn.addEventListener('click', (e) => {
-      e.stopPropagation()
-      console.log('clicked')
-    }, true)
-    wrap.appendChild(wrapBtn)
-    const target = graph.addNode({
-      x: 180,
-      y: 160,
-      width: 100,
-      height: 40,
-      shape: 'html',
-      html: wrap,
     })
 
     const stencil = new X6.Addon.Stencil({
@@ -178,7 +263,7 @@
       }))
     })
 
-    var id = ''
+    let id = ''
     graph.on('node:click', ({
       e,
       x,
@@ -190,12 +275,27 @@
       console.log('当前选中id')
     })
 
+    graph.on('node:dblclick', ({
+      e,
+      x,
+      y,
+      node,
+      view
+    }) => {
+      ws.send(JSON.stringify({
+        code: 'getOptions',
+        data: {
+          id,
+          name: node.data.name
+        }
+      }))
+    })
+
     function start() {
       ws.send(JSON.stringify({
         code: 'startFlow',
         data: {
-          id,
-          num: 3
+          id
         }
       }))
     }
@@ -217,7 +317,32 @@
         index++;
       }
 
-      return new Rect({
+      
+
+      return new X6.Shape.HTML({
+        // shape: 'start-btn-rect',
+        html() {
+          const wrap = document.createElement('div')
+          wrap.style.width = '100%'
+          wrap.style.height = '100%'
+          wrap.style.background = '#fff'
+          wrap.style.border = 'solid 1px #000'
+          wrap.style.display = 'flex'
+          wrap.style.fontSize = '14px'
+          wrap.style.justifyContent = 'center'
+          wrap.style.alignItems = 'center'
+          if(options.hasStartBtn) {
+            const wrapBtn = document.createElement('div')
+            wrapBtn.classList.add('btn')
+            wrapBtn.addEventListener('click', function(e) {
+              e.stopPropagation()
+              start()
+            }, true)
+            wrap.appendChild(wrapBtn)
+          }        
+
+          return wrap
+        },
         width: 60,
         height: 30,
         ports: {
@@ -250,14 +375,17 @@
           },
         },
         label: name,
+        data: { name }
       })
     }
 
+    const options = {}
     function setList(data) {
       let componentGroup = []
       for (let [key, value] of Object.entries(data)) {
         console.log(key, value)
         componentGroup.push(makeItem(key, value))
+        options[key] = value.node.options
       }
       stencil.load(componentGroup, 'group1')
     }
@@ -277,8 +405,10 @@
         code,
         data
       } = JSON.parse(evt.data)
-      setList(data)
-      // ws.close();
+      switch(code) {          
+        case 'allFun': setList(data); break;
+        case 'getOptions': toggle(data.id, data.name, data.values); break;
+      }
     };
 
     ws.onclose = function (evt) {
@@ -286,8 +416,59 @@
     }
   </script>
   <script>
-    function openDrawer() {
-      document.getElementById('drawer').style.width = '400px' 
+    let toggleValue = false
+
+    function toggle(id, name='', values) {
+      const obj = options[name] || undefined 
+      if(!toggleValue && (!obj || JSON.stringify(obj) == '{}')) return // 需要打开时 不存在可改项则不打开抽屉
+      toggleValue = !toggleValue
+      const bodyDom = document.getElementById('lcs-body')         
+
+      if (toggleValue) {
+            
+        bodyDom.innerHTML= makeFormOptions(obj, values)
+        document.querySelector("#lcs-drawer").style.display = 'block'
+      } else {
+    
+        while(bodyDom.hasChildNodes()) {
+          bodyDom.removeChild(bodyDom.lastChild)
+        }
+        document.querySelector("#lcs-drawer").style.display = 'none'
+      }
+    }
+
+    function submit() {
+      let form = document.getElementById('lcs-body')
+      let formElements = form.getElementsByClassName('el-input')
+      const formObj = {}
+      for(let i = 0; i < formElements.length; i++) {
+        const name = formElements[i].name,
+          value = formElements[i].value
+        formObj[name] = value
+      }
+
+      ws.send(JSON.stringify({
+        code: 'setMsg',
+        data: {
+          id,
+          payload: formObj
+        },
+      }))
+
+      toggle()
+    }
+
+    makeFormOptions = (obj, values) => {
+      let json = ''
+      for(const [key, value] of Object.entries(obj)) {
+        json += `
+          <div class='lcs-form-input-box'>
+            <lable>${value.name}:</lable><input class='el-input' name='${key}' value='${values[key]}' placeholder='请输入${value.name}'/>
+          </div>
+        `
+      }
+
+      return json
     }
   </script>
 </body>
